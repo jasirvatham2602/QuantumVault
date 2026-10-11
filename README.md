@@ -38,6 +38,9 @@ guided views of the Bell pair, key processing, and QOTP stages.
 - `Quantum_Vault.ipynb` — complete notebook walkthrough and visual demo.
 - `quantum_vault.py` — reusable simulator, protocol, QOTP, and plotting code.
 - `quantum_vault_ui.py` — interactive Jupyter lab built with ipywidgets.
+- `quantum_vault_app.py` — compatibility launcher for the local app.
+- `quantum_vault_streamlit.py` — recommended local browser-based interactive app.
+- `run_quantum_vault.command` — macOS launcher for the desktop window.
 - `requirements.txt` — Python dependencies.
 - `LICENSE` — MIT license.
 
@@ -64,6 +67,21 @@ You can also run the Python demonstration directly:
 ```bash
 python quantum_vault.py
 ```
+
+## Run as a local desktop window
+
+The recommended local app is a browser-based window served only from your
+computer. It avoids Jupyter and contains a security overview, round-by-round
+replay, and QOTP encryption tab.
+
+```bash
+python3 -m pip install streamlit
+python3 -m streamlit run quantum_vault_streamlit.py
+```
+
+On macOS, you can also double-click `run_quantum_vault.command` in Finder. If
+macOS blocks it the first time, right-click the file, choose **Open**, and then
+confirm. A browser tab will open at the local app address.
 
 This prints the Bell-pair counts and protocol summaries, then opens the protocol
 and QOTP visualizations.
