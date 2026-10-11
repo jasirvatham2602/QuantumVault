@@ -57,6 +57,11 @@ the **Round replay** tab reveals protocol rounds one at a time, and the
 their state-vector amplitudes. This makes each security decision visible and
 gives presenters a simple way to vary the attack and explain the result live.
 
+For the Qollab Python/Qiskit runner, use the lightweight `main.py` entry point
+with `quantum_vault.py`, `requirements.txt`, `LICENSE`, and this README. The
+Streamlit interface is intended for local presentation; `main.py` provides the
+compact textual Bell/E91 demonstration that Qollab can execute directly.
+
 The interactive lab adds Learn, Experiment, and Challenge modes. It includes
 Eve and noise controls, a round-by-round Play replay, live security metrics, and
 guided views of the Bell pair, key processing, and QOTP stages.
@@ -64,6 +69,7 @@ guided views of the Bell pair, key processing, and QOTP stages.
 ## Repository contents
 
 - `Quantum_Vault.ipynb` — complete notebook walkthrough and visual demo.
+- `main.py` — lightweight Qollab Python/Qiskit entry point for the core demo.
 - `quantum_vault.py` — reusable simulator, protocol, QOTP, and plotting code.
 - `quantum_vault_ui.py` — interactive Jupyter lab built with ipywidgets.
 - `quantum_vault_app.py` — compatibility launcher for the local app.
