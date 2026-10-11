@@ -29,6 +29,34 @@ QBER, running CHSH, surviving key material, and the final accept/reject result.
 The QOTP visualization compares the original and encrypted quantum-state
 amplitudes, including real and imaginary components.
 
+## Hackathon entry
+
+QuantumVault is being submitted to the **Qollab × IonQ Global Quantum
+Hackathon** in the **Quantum Unlocked** section. The project fits this theme by
+turning a difficult quantum-networking and quantum-cryptography concept into an
+interactive learning experience. Instead of treating the quantum circuit as a
+black box, the project lets users see how entanglement is created, how channel
+disturbance changes the measurements, and why the protocol rejects an unsafe
+key.
+
+The demonstration begins by generating Bell pairs for Alice and Bob. Some
+rounds produce raw key bits, while other rounds are reserved for the CHSH Bell
+test. The simulator can add channel noise or an Eve interception model, then
+calculates QBER and CHSH to evaluate the channel. If the checks pass, the raw
+key is reconciled and compressed with privacy amplification before selected key
+bits drive the Quantum One-Time Pad. The QOTP section shows the original
+quantum state, the keyed encrypted state, and the reverse operations used to
+recover it.
+
+The local interface is a Streamlit app that runs on the user's computer. The
+sidebar provides controls for protocol rounds, Eve's interception probability,
+and channel noise; pressing **Run simulation** refreshes the experiment. The
+**Security overview** tab presents the full honest-versus-attacked dashboard,
+the **Round replay** tab reveals protocol rounds one at a time, and the
+**QOTP encryption** tab displays the input and encrypted circuits alongside
+their state-vector amplitudes. This makes each security decision visible and
+gives presenters a simple way to vary the attack and explain the result live.
+
 The interactive lab adds Learn, Experiment, and Challenge modes. It includes
 Eve and noise controls, a round-by-round Play replay, live security metrics, and
 guided views of the Bell pair, key processing, and QOTP stages.
