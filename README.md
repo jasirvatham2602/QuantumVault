@@ -29,10 +29,15 @@ QBER, running CHSH, surviving key material, and the final accept/reject result.
 The QOTP visualization compares the original and encrypted quantum-state
 amplitudes, including real and imaginary components.
 
+The interactive lab adds Learn, Experiment, and Challenge modes. It includes
+Eve and noise controls, a round-by-round Play replay, live security metrics, and
+guided views of the Bell pair, key processing, and QOTP stages.
+
 ## Repository contents
 
 - `Quantum_Vault.ipynb` — complete notebook walkthrough and visual demo.
 - `quantum_vault.py` — reusable simulator, protocol, QOTP, and plotting code.
+- `quantum_vault_ui.py` — interactive Jupyter lab built with ipywidgets.
 - `requirements.txt` — Python dependencies.
 - `LICENSE` — MIT license.
 
@@ -45,6 +50,13 @@ python3 -m venv .venv
 source .venv/bin/activate       # macOS/Linux
 python -m pip install -r requirements.txt
 jupyter notebook Quantum_Vault.ipynb
+```
+
+Run the interactive lab in a notebook cell:
+
+```python
+from quantum_vault_ui import build_interactive_lab
+display(build_interactive_lab())
 ```
 
 You can also run the Python demonstration directly:

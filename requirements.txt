@@ -3,3 +3,4 @@ numpy>=1.26
 pandas>=2.0
 matplotlib>=3.8
 jupyter>=1.0
+ipywidgets>=8.0
