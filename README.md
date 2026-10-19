@@ -1,5 +1,7 @@
 # QuantumVault
 
+**Live demo:** [bluequantumvault.streamlit.app](https://bluequantumvault.streamlit.app/)
+
 QuantumVault is an educational quantum-cybersecurity simulator built for the
 Qollab × IonQ Global Quantum Hackathon. It demonstrates how an E91-style
 entanglement-based key exchange can detect channel disturbance before the
