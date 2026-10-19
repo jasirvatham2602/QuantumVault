@@ -66,6 +66,39 @@ The interactive lab adds Learn, Experiment, and Challenge modes. It includes
 Eve and noise controls, a round-by-round Play replay, live security metrics, and
 guided views of the Bell pair, key processing, and QOTP stages.
 
+## IBM Bob hackathon improvements
+
+The following focused improvements were made during the IBM Bob hackathon on the
+`ibm-bob-hackathon` branch. See `BOB_WORKLOG.md` for the full analysis.
+
+### Bug fix — reproducibility in `sweep_eve_probability()`
+
+The Eve-probability sweep previously varied the RNG seed by list index
+(`seed + index`), which made each scenario's result depend on its position in
+the list rather than solely on its `eve_probability` value. The fix uses the
+same base seed for every scenario, so individual scenarios are reproducible
+regardless of how many probabilities are in the sweep list.
+
+### New feature — Markdown experiment report
+
+`experiment_report_markdown(result, config)` in `quantum_vault.py` generates a
+human-readable Markdown summary of a protocol run. It includes simulation
+settings, security metrics (QBER, CHSH, reconciliation), key lengths, the
+accept/reject decision, and a plain-language explanation. Secret key material is
+intentionally excluded.
+
+### New feature — Streamlit report download
+
+The Streamlit app now includes an **📄 Experiment report** expander below the
+QOTP encryption tab. Choose either the honest or attacked channel and press
+**⬇ Download report (.md)** to save the Markdown report locally.
+
+### Tests
+
+`test_quantum_vault.py` adds five regression and unit tests covering sweep
+reproducibility, position-independence of sweep results, required report
+sections, key-bit exclusion from reports, and report format.
+
 ## Repository contents
 
 - `Quantum_Vault.ipynb` — complete notebook walkthrough and visual demo.
@@ -76,6 +109,8 @@ guided views of the Bell pair, key processing, and QOTP stages.
 - `quantum_vault_streamlit.py` — recommended local browser-based interactive app.
 - `run_quantum_vault.command` — macOS launcher for the desktop window.
 - `requirements.txt` — Python dependencies.
+- `test_quantum_vault.py` — regression and unit tests.
+- `BOB_WORKLOG.md` — IBM Bob hackathon analysis and change log.
 - `LICENSE` — MIT license.
 
 ## Quick start
@@ -94,6 +129,12 @@ Run the interactive lab in a notebook cell:
 ```python
 from quantum_vault_ui import build_interactive_lab
 display(build_interactive_lab())
+```
+
+Run the tests:
+
+```bash
+python3 -m pytest test_quantum_vault.py -v
 ```
 
 You can also run the Python demonstration directly:

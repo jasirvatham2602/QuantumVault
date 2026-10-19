@@ -75,10 +75,10 @@ def bell_pair_circuit(
     return circuit
 
 
-def bell_pair_demo(shots: int = 1100) -> dict[str, int]:
+def bell_pair_demo(shots: int = 1100, seed: int | None = None) -> dict[str, int]:
     """Sample the basic Z/Z Bell-pair circuit."""
     circuit = bell_pair_circuit("Z", "Z")
-    sampler = StatevectorSampler()
+    sampler = StatevectorSampler(seed=seed)
     result = sampler.run([circuit], shots=shots).result()
     counts = result[0].data.c.get_counts()
     return dict(counts)
@@ -106,7 +106,12 @@ def _quantum_samples_by_setting(
     setting_pairs: Iterable[tuple[str, str]],
     rng: np.random.Generator,
 ) -> dict[tuple[str, str], list[tuple[int, int]]]:
-    """Sample honest Bell-pair outcomes grouped by setting pair."""
+    """Sample honest Bell-pair outcomes grouped by setting pair.
+
+    The StatevectorSampler is seeded from the same NumPy RNG that drives the
+    rest of the protocol so the entire simulation is reproducible from a single
+    seed integer.
+    """
     pairs = list(setting_pairs)
     if not pairs:
         return {}
@@ -116,7 +121,8 @@ def _quantum_samples_by_setting(
         counts_by_pair[pair] = counts_by_pair.get(pair, 0) + 1
 
     circuits = [bell_pair_circuit(a, b) for a, b in counts_by_pair]
-    sampler = StatevectorSampler()
+    sampler_seed = int(rng.integers(0, 2**31))
+    sampler = StatevectorSampler(seed=sampler_seed)
 
     output: dict[tuple[str, str], list[tuple[int, int]]] = {}
     for pair, circuit in zip(counts_by_pair, circuits):
@@ -521,13 +527,20 @@ def sweep_eve_probability(
     noise_probability: float = 0.0,
     seed: int = 7,
 ) -> pd.DataFrame:
+    """Sweep over Eve interception probabilities and return a summary DataFrame.
+
+    Every scenario uses the *same* base seed so that results are reproducible
+    regardless of how many probabilities are in the list or their order.
+    The previous behaviour (seed + index) made each run depend on list position,
+    which broke reproducibility when the list was reordered or extended.
+    """
     records: list[dict[str, object]] = []
-    for index, probability in enumerate(probabilities):
+    for probability in probabilities:
         config = ProtocolConfig(
             rounds=rounds,
             eve_probability=float(probability),
             noise_probability=noise_probability,
-            seed=seed + index,
+            seed=seed,
         )
         result = run_experiment(config)
         records.append(
@@ -733,6 +746,104 @@ def plot_protocol_dashboard(
 
     figure.tight_layout(rect=(0, 0, 1, 0.96))
     return figure, axes
+
+
+def experiment_report_markdown(
+    result: dict[str, object],
+    config: ProtocolConfig,
+) -> str:
+    """Return a Markdown experiment report for the given run.
+
+    The report includes the simulation settings, key security metrics, key
+    lengths, the accept/reject decision, and a plain-language explanation.
+    Secret key material is intentionally excluded.
+    """
+    qber = float(result["qber"])  # type: ignore[arg-type]
+    chsh = float(result["chsh"])  # type: ignore[arg-type]
+    raw_len = int(result["raw_key_length"])  # type: ignore[arg-type]
+    final_len = int(result["final_key_length"])  # type: ignore[arg-type]
+    accepted = bool(result["accepted"])
+    qber_pass = bool(result["qber_pass"])
+    chsh_pass = bool(result["chsh_pass"])
+    recon_ok = bool(result["reconciliation_ok"])
+
+    status_icon = "✅ ACCEPTED" if accepted else "❌ REJECTED"
+
+    qber_str = f"{qber:.4f}" if not (qber != qber) else "N/A"  # NaN guard
+    chsh_str = f"{chsh:.4f}" if not (chsh != chsh) else "N/A"
+
+    if accepted:
+        explanation = (
+            "The channel behaved as expected for an honest entangled source. "
+            f"The quantum bit-error rate ({qber_str}) stayed below the {config.qber_threshold:.2f} threshold, "
+            f"and the CHSH score ({chsh_str}) exceeded the classical limit of {config.chsh_threshold:.1f}, "
+            "confirming that the measured correlations are stronger than any classical strategy could produce. "
+            "Key reconciliation succeeded and a final key was produced after privacy amplification."
+        )
+    else:
+        reasons = []
+        if not qber_pass:
+            reasons.append(
+                f"the QBER ({qber_str}) exceeded the threshold of {config.qber_threshold:.2f}, "
+                "indicating too many measurement mismatches"
+            )
+        if not chsh_pass:
+            reasons.append(
+                f"the CHSH score ({chsh_str}) did not exceed the classical limit of {config.chsh_threshold:.1f}, "
+                "suggesting the correlations are too weak to confirm entanglement"
+            )
+        if not recon_ok:
+            reasons.append("key reconciliation failed, leaving uncorrected errors in the shared key")
+        if final_len < 8:
+            reasons.append("too few key bits survived reconciliation and privacy amplification")
+        joined = "; ".join(reasons) if reasons else "one or more security checks failed"
+        explanation = (
+            f"The key exchange was rejected because {joined}. "
+            "This is the expected outcome when an eavesdropper or high channel noise "
+            "disturbs the entangled pairs."
+        )
+
+    lines = [
+        "# QuantumVault Experiment Report",
+        "",
+        "## Simulation settings",
+        "",
+        f"| Parameter | Value |",
+        f"|---|---|",
+        f"| Protocol rounds | {config.rounds} |",
+        f"| Eve interception probability | {config.eve_probability:.2f} |",
+        f"| Channel noise probability | {config.noise_probability:.2f} |",
+        f"| QBER threshold | {config.qber_threshold:.2f} |",
+        f"| CHSH threshold | {config.chsh_threshold:.1f} |",
+        f"| Random seed | {config.seed} |",
+        "",
+        "## Security metrics",
+        "",
+        f"| Metric | Value | Pass? |",
+        f"|---|---|---|",
+        f"| QBER | {qber_str} | {'✅' if qber_pass else '❌'} |",
+        f"| CHSH score | {chsh_str} | {'✅' if chsh_pass else '❌'} |",
+        f"| Reconciliation | — | {'✅' if recon_ok else '❌'} |",
+        "",
+        "## Key material",
+        "",
+        f"| Stage | Bits |",
+        f"|---|---|",
+        f"| Raw key | {raw_len} |",
+        f"| Final key (after amplification) | {final_len} |",
+        "",
+        "## Decision",
+        "",
+        f"**{status_icon}**",
+        "",
+        "## Explanation",
+        "",
+        explanation,
+        "",
+        "---",
+        "*Generated by QuantumVault. Secret key material is not included in this report.*",
+    ]
+    return "\n".join(lines)
 
 
 def print_result(result: dict[str, object]) -> None:

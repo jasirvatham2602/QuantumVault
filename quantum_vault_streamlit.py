@@ -16,6 +16,7 @@ from quantum_vault import (
     ProtocolConfig,
     bell_pair_circuit,
     bell_pair_demo,
+    experiment_report_markdown,
     plot_protocol_dashboard,
     plot_qotp_state_comparison,
     qotp_demo,
@@ -34,28 +35,28 @@ st.set_page_config(
 @st.cache_data(show_spinner=False)
 def simulate(rounds: int, eve_probability: float, noise_probability: float) -> dict[str, object]:
     """Run one honest/attacked comparison and cache identical settings."""
-    honest = run_experiment(
-        ProtocolConfig(
-            rounds=rounds,
-            eve_probability=0.0,
-            noise_probability=noise_probability,
-            seed=7,
-        )
+    honest_config = ProtocolConfig(
+        rounds=rounds,
+        eve_probability=0.0,
+        noise_probability=noise_probability,
+        seed=7,
     )
-    attacked = run_experiment(
-        ProtocolConfig(
-            rounds=rounds,
-            eve_probability=eve_probability,
-            noise_probability=noise_probability,
-            seed=7,
-        )
+    attacked_config = ProtocolConfig(
+        rounds=rounds,
+        eve_probability=eve_probability,
+        noise_probability=noise_probability,
+        seed=7,
     )
+    honest = run_experiment(honest_config)
+    attacked = run_experiment(attacked_config)
     bell_counts = bell_pair_demo(shots=500)
     final_key = honest["final_key"]
     qotp = qotp_demo(final_key[:8]) if len(final_key) >= 8 else None
     return {
         "honest": honest,
+        "honest_config": honest_config,
         "attacked": attacked,
+        "attacked_config": attacked_config,
         "bell_counts": bell_counts,
         "qotp": qotp,
     }
@@ -180,6 +181,25 @@ def main() -> None:
             st.pyplot(figure, clear_figure=False, use_container_width=True)
             plt.close(figure)
             st.info("Bob applies the reverse keyed operations and recovers the original state.")
+
+    with st.expander("📄 Experiment report"):
+        report_channel = st.radio(
+            "Report for channel",
+            ["Honest channel", "Attacked channel"],
+            horizontal=True,
+            key="report_channel_radio",
+        )
+        if report_channel == "Honest channel":
+            report_text = experiment_report_markdown(honest, results["honest_config"])
+        else:
+            report_text = experiment_report_markdown(attacked, results["attacked_config"])
+        st.markdown(report_text)
+        st.download_button(
+            label="⬇ Download report (.md)",
+            data=report_text,
+            file_name="quantum_vault_experiment_report.md",
+            mime="text/markdown",
+        )
 
     with st.expander("Show the Bell-pair circuit"):
         st.code(str(bell_pair_circuit("Z", "Z").draw()), language="text")
